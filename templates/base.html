@@ -67,11 +67,11 @@
                                 </a>
                             </li>
 
-                            <li class="nav-item featured-box mt-lg-5 mt-4 mb-4">
-                                <img src="static/images/credit-card.png" class="img-fluid" alt="">
+<!--                            <li class="nav-item featured-box mt-lg-5 mt-4 mb-4">-->
+<!--                                <img src="static/images/credit-card.png" class="img-fluid" alt="">-->
 
-                                <a class="btn custom-btn" href="#">Upgrade</a>
-                            </li>
+<!--                                <a class="btn custom-btn" href="#">Upgrade</a>-->
+<!--                            </li>-->
 
                             <li class="nav-item border-top mt-auto pt-2">
                                 <a class="nav-link" href="#">
@@ -89,7 +89,8 @@
 
         {% include 'footer.html' %}
 
-            var options = {
+        <script type="text/javascript">
+            let pie_option = {
               series: [13, 43, 22],
               chart: {
               width: 380,
@@ -109,22 +110,19 @@
             }]
             };
 
-            var chart = new ApexCharts(document.querySelector("#pie-chart"), options);
-            chart.render();
+            let pie_chart = new ApexCharts(document.querySelector("#pie-chart"), pie_option);
+            pie_chart.render();
         </script>
 
         <script type="text/javascript">
-            var options = {
+            let graph_option = {
               series: [{
               name: 'Income',
               data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
             }, {
               name: 'Expense',
               data: [76, 85, 101, 98, 87, 105, 91, 114, 94]
-            }, {
-              name: 'Transfer',
-              data: [35, 41, 36, 26, 45, 48, 52, 53, 41]
-            }],
+            },],
               chart: {
               type: 'bar',
               height: 350
@@ -164,8 +162,8 @@
             }
             };
 
-            var chart = new ApexCharts(document.querySelector("#chart"), options);
-            chart.render();
+            let graph_chart = new ApexCharts(document.querySelector("#chart"), graph_option);
+            graph_chart.render();
         </script>
 
     </body>

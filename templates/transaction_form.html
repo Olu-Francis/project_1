@@ -1,0 +1,28 @@
+
+
+{% extends "base.html" %}
+
+{% block title %}AI Financial Advisor - Add New Transaction{% endblock %}
+
+{% block content %}
+
+<main class="main-wrapper col-md-9 ms-sm-auto py-4 col-lg-9 px-md-4 border-start">
+    <div class="title-group mb-3">
+        <h1 class="h2 mb-0">New Transaction</h1>
+    </div>
+    <form class="custom-form" method="POST">
+        {{ form.hidden_tag() }}
+        {{ form.amount.label(class="form-label") }}
+        {{ form.amount(class="form-control") }}<br>
+        {{ form.trans_type.label(class="form-label") }}
+        {{ form.trans_type(class="form-control") }}<br>
+        {{ form.recurring_trans.label(class="form-label") }}
+        {{ form.recurring_trans() }}<br><br>
+        {{ form.duration.label(class="form-label") }}
+        {{ form.duration(class="form-control") }}<br>
+        {{ form.submit(class="form-control ms-2") }}
+    </form>
+</main>
+
+{% endblock %}
+
