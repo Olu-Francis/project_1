@@ -97,6 +97,10 @@ ul li {
   font-weight: var(--font-weight-light);
 }
 
+td a {
+    color: var(--dark-color);
+}
+
 a, 
 button {
   touch-action: manipulation;

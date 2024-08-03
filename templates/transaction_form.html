@@ -1,28 +1,104 @@
-
-
 {% extends "base.html" %}
 
 {% block title %}AI Financial Advisor - Add New Transaction{% endblock %}
 
 {% block content %}
 
-<main class="main-wrapper col-md-9 ms-sm-auto py-4 col-lg-9 px-md-4 border-start">
-    <div class="title-group mb-3">
-        <h1 class="h2 mb-0">New Transaction</h1>
-    </div>
-    <form class="custom-form" method="POST">
-        {{ form.hidden_tag() }}
-        {{ form.amount.label(class="form-label") }}
-        {{ form.amount(class="form-control") }}<br>
-        {{ form.trans_type.label(class="form-label") }}
-        {{ form.trans_type(class="form-control") }}<br>
-        {{ form.recurring_trans.label(class="form-label") }}
-        {{ form.recurring_trans() }}<br><br>
-        {{ form.duration.label(class="form-label") }}
-        {{ form.duration(class="form-control") }}<br>
-        {{ form.submit(class="form-control ms-2") }}
-    </form>
-</main>
+    <main class="main-wrapper col-md-9 ms-sm-auto py-4 col-lg-9 px-md-4 border-start">
+        <div class="title-group mb-3">
+            <h1 class="h2 mb-0">New Transaction</h1>
+        </div>
+        <form class="needs-validation" method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="form-row">
+                <div class="col-md-4 mb-3">
+                    {{ form.amount.label(class="form-label") }}
+                    {{ form.amount(class="form-control") }}
+                    {% if form.amount.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.amount.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="invalid-feedback">
+                            Please include an amount!
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    {{ form.trans_type.label(class="form-label") }}
+                    {{ form.trans_type(class="form-control custom-select") }}
+                    {% if form.trans_type.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.trans_type.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="invalid-feedback">
+                            Please select a transaction type!
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    {{ form.recurring_trans(class="form-check-input") }}
+                    {{ form.recurring_trans.label(class="form-label") }}
+                    {% if form.recurring_trans.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.recurring_trans.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="col-md-4 mb-3">
+                    {{ form.duration.label(class="form-label") }}
+                    {{ form.duration(class="form-control") }}
+                    {% if form.duration.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.duration.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="invalid-feedback">
+                            Please indicate how long it will recur for!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {{ form.submit(class="ms-2", type="submit") }}
+        </form>
+
+        <script>
+        // Example starter JavaScript for disabling form submissions if there are invalid fields
+        (function() {
+          'use strict';
+          window.addEventListener('load', function() {
+            // Fetch all the forms we want to apply custom Bootstrap validation styles to
+            var forms = document.getElementsByClassName('needs-validation');
+            // Loop over them and prevent submission
+            var validation = Array.prototype.filter.call(forms, function(form) {
+              form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+              }, false);
+            });
+          }, false);
+        })();
+        </script>
+
+    </main>
 
 {% endblock %}
 

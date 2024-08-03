@@ -3,58 +3,28 @@
     <h5 class="mb-4">Recent Transactions</h5>
 
     <div class="d-flex flex-wrap align-items-center mb-4">
-        <div class="d-flex align-items-center">
-            <img src="static/images/profile/senior-man-white-sweater-eyeglasses.jpg" class="profile-image img-fluid" alt="">
-
-            <div>
-                <p>
-                    <a href="{{ url_for('transaction_detail') }}">Daniel Jones</a>
-                </p>
-
-                <small class="text-muted">C2C Transfer</small>
+        {% for transaction in user_transactions %}
+            <div class="d-flex align-items-center">
+                <img src="static/images/profile/senior-man-white-sweater-eyeglasses.jpg" class="profile-image img-fluid" alt="">
+                <div>
+                    <p>
+                        <a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}">
+                        {{ transaction.trans_type }}
+                        </a>
+                    </p>
+                    <small class="text-muted">C2C Transfer</small>
+                </div>
             </div>
-        </div>
 
-        <div class="ms-auto">
-            <small>05/12/2023</small>
-            <strong class="d-block text-danger"><span class="me-1">-</span> $250</strong>
-        </div>
-    </div>
-
-    <div class="d-flex flex-wrap align-items-center mb-4">
-        <div class="d-flex align-items-center">
-            <img src="static/images/profile/young-beautiful-woman-pink-warm-sweater.jpg" class="profile-image img-fluid" alt="">
-
-            <div>
-                <p>
-                    <a href="{{ url_for('transaction_detail') }}">Public Bank</a>
-                </p>
-
-                <small class="text-muted">Mobile Reload</small>
+            <div class="ms-auto">
+                <small>{{ transaction.date_added.strftime('%B %d, %Y') }}</small>
+                {% if transaction.trans_type == 'Income' %}
+                    <strong class="d-block text-success"><span class="me-1">+</span> ${{ transaction.amount }}</strong>
+                {% else %}
+                    <strong class="d-block text-danger"><span class="me-1">-</span> ${{ transaction.amount }}</strong>
+                {% endif %}
             </div>
-        </div>
-
-        <div class="ms-auto">
-            <small>22/8/2023</small>
-            <strong class="d-block text-success"><span class="me-1">+</span> $280</strong>
-        </div>
-    </div>
-
-    <div class="d-flex flex-wrap align-items-center">
-        <div class="d-flex align-items-center">
-            <img src="static/images/profile/young-woman-with-round-glasses-yellow-sweater.jpg" class="profile-image img-fluid" alt="">
-
-            <div>
-                <p><a href="{{ url_for('transaction_detail') }}">Store</a></p>
-
-                <small class="text-muted">Payment Received</small>
-            </div>
-        </div>
-
-        <div class="ms-auto">
-            <small>22/8/2023</small>
-            <strong class="d-block text-success"><span class="me-1">+</span> $280</strong>
-        </div>
+        {% endfor %}
     </div>
 
     <div class="border-top pt-4 mt-4 text-center">
