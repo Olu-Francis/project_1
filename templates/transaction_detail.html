@@ -74,6 +74,9 @@
                         {{ form.duration(class="form-control") }}
                     </div>
                     {{ form.submit(class="btn custom-btn ms-2", type="submit") }}
+                    <a class="btn delete-btn" href="{{ url_for('delete', id=transaction_id) }}">
+                        Delete
+                    </a>
                 </form>
             </div>
         </div>

@@ -370,6 +370,18 @@ strong {
   font-style: italic;
 }
 
+.delete-btn {
+  background: var(--primary-color);
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-large);
+  color: var(--white-color);
+  font-size: var(--btn-font-size);
+  font-weight: var(--font-weight-bold);
+  line-height: normal;
+  transition: all 0.3s;
+  padding: 10px 20px;
+}
+
 
 /*---------------------------------------
   NAVIGATION              

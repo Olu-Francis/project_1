@@ -1,10 +1,14 @@
+import re
 from flask import Flask, render_template, flash, redirect, url_for, request
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, FileField, SelectField, BooleanField, IntegerField
-from wtforms.validators import DataRequired, ValidationError
-
+from wtforms import (StringField, SubmitField, FileField, SelectField, BooleanField, IntegerField, ValidationError,
+                     TelField, PasswordField)
+from wtforms.validators import DataRequired, EqualTo, Length
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 
 TYPE_CHOICES = [('', 'Select a type'), ('Income', 'Income'), ('Expense', 'Expenses')]
 
@@ -17,15 +21,40 @@ app.config['SECRET_KEY'] = "uyfhgfcnbfbgfdgfdhbdfgfdgf"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootpass@localhost/our_users'
 # Initialize the Database
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+# Flask Login To do
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
 
 
 # Create Model
-class Users(db.Model):
+class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), nullable=False, unique=True)
     name = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(180), nullable=False, unique=True)
-    balance = db.Column(db.Integer, default=0)
+    phone = db.Column(db.String(20), nullable=False)
+    balance = db.Column(db.Integer, default=0, nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.now)
+    # Do Password Logic
+    password_hash = db.Column(db.String(180), nullable=False)
+
+    @property
+    def password(self):
+        raise AttributeError("Password is not a readable attribute!!")
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
     # Create a String
     def __repr__(self):
@@ -45,6 +74,18 @@ class Transactions(db.Model):
 
 
 # Create a Form Class
+
+class UserForm(FlaskForm):
+    name = StringField(label="Name", validators=[DataRequired()])
+    username = StringField(label="Username", validators=[DataRequired()])
+    email = StringField(label="Email", validators=[DataRequired()])
+    phone = TelField(label="Phone")
+    password = PasswordField(label="Password", validators=[DataRequired(), EqualTo("password1",
+                                                                                   message="Password Must Match")])
+    password1 = PasswordField(label="Re-enter Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+
 class TransactionForm(FlaskForm):
     amount = IntegerField(label="Amount", validators=[DataRequired()])
     trans_type = SelectField(label="Type", choices=TYPE_CHOICES, validators=[DataRequired()])
@@ -53,8 +94,121 @@ class TransactionForm(FlaskForm):
     submit = SubmitField("Submit")
 
 
+class PasswordForm(FlaskForm):
+    email = StringField("What's Your Email", validators=[DataRequired()])
+    password = PasswordField("What's Your Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+
+@app.route('/user/add', methods=['GET', 'POST'])
+def add_user():
+    name = None
+    form = UserForm()
+
+    def validate_phone_number(phone_number):
+        pattern = re.compile(r'^\+?\d{10,15}$')
+        if pattern.match(phone_number):
+            return phone_number
+        else:
+            raise ValueError("Invalid phone number")
+
+    if form.validate_on_submit():
+        user = Users.query.filter_by(email=form.email.data).first()
+        # Example usage
+        try:
+            if user is None:
+                # Hash the password
+                hashed_pw = generate_password_hash(form.password.data)
+                phone = validate_phone_number(form.phone.data)
+                user = Users(name=form.name.data, username=form.username.data, email=form.email.data, balance=0,
+                             phone=phone, password_hash=hashed_pw)
+                db.session.add(user)
+                db.session.commit()
+            name = form.name.data
+            form.name.data = ''
+            form.username.data = ''
+            form.email.data = ''
+            form.phone.data = ''
+            form.password.data = ''
+
+            flash("User Added Successfully!")
+        except ValueError as e:
+            print(e)
+    our_users = Users.query.order_by(Users.date_added)
+    return render_template("add_user.html",
+                           form=form,
+                           name=name,
+                           our_users=our_users)
+
+
+# Create Password Test Page
+@app.route('/test_pw', methods=['GET', 'POST'])
+def test_pw():
+    email = None
+    password = None
+    pw_to_check = None
+    passed = None
+    form = PasswordForm()
+
+    # Validate Form
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        # Clear the form
+        form.email.data = ''
+        form.password.data = ''
+
+        # Lookup User By Email Address
+        pw_to_check = Users.query.filter_by(email=email).first()
+
+        # Check Hashed Password
+        passed = check_password_hash(pw_to_check.password_hash, password)
+
+    return render_template("test_pw.html",
+                           email=email,
+                           password=password,
+                           pw_to_check=pw_to_check,
+                           passed=passed,
+                           form=form)
+
+
+# Create Login Form
+class LoginForm(FlaskForm):
+    username = StringField(label="Username", validators=[DataRequired()])
+    password = PasswordField(label="Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+
+# Create login page
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = Users.query.filter_by(username=form.username.data).first()
+        if user:
+            # Check the hash
+            if check_password_hash(user.password_hash, form.password.data):
+                login_user(user)
+                return redirect(url_for("index"))
+            else:
+                flash("Wrong Details - Try Again!")
+        else:
+            flash("Wrong Details - Try Again!")
+    return render_template("login.html", form=form)
+
+
+# Create logout page
+@app.route("/logout", methods=["GET", "POST"])
+@login_required
+def logout():
+    logout_user()
+    flash("You just logged out!")
+    return redirect(url_for("login"))
+
+
 # Create route decorators
 @app.route("/")
+@login_required
 def index():
     user_transactions = Transactions.query.order_by(Transactions.date_added.desc()).limit(limit=4)
     date = datetime.now().year
@@ -207,8 +361,31 @@ def add_transaction_detail():
     #                        duration=duration,
     #                        form=form, )
 
-# TODO: 1.) Work on the Deletion of transaction
-#  2.) Balance record keeping
+
+@app.route("/delete/<int:id>")
+def delete(id):
+    delete_transaction = Transactions.query.get_or_404(id)
+    try:
+        db.session.delete(delete_transaction)
+        db.session.commit()
+        return redirect(url_for('wallet'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error!!... There was a problem deleting your record: {str(e)}")
+        return redirect(url_for('wallet'))
+
+
+@app.route("/delete_user/<int:id>")
+def delete_user(id):
+    delete_users = Users.query.get_or_404(id)
+    try:
+        db.session.delete(delete_users)
+        db.session.commit()
+        return redirect(url_for('add_user'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error!!... There was a problem deleting your record: {str(e)}")
+        return redirect(url_for('add_user'))
 
 
 # Create Custom Error Pages
