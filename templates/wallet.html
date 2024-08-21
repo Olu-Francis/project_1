@@ -5,6 +5,14 @@
 {% block content %}
 
     <main class="main-wrapper col-md-9 ms-sm-auto py-4 col-lg-9 px-md-4 border-start">
+        {% for message in get_flashed_messages() %}
+
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+        {% endfor %}
         <div class="title-group mb-3">
             <h1 class="h2 mb-0">Wallet</h1>
         </div>
@@ -24,13 +32,15 @@
 
                                     <th scope="col">Amount</th>
 
-                                    <th scope="col">Inc/Exp</th>
+                                    <th scope="col">Type</th>
 
-                                    <th scope="col">Recurring Transaction</th>
+                                    <th scope="col">Category</th>
+
+                                    <th scope="col">Frequency</th>
 
                                     <th scope="col">Duration</th>
 
-                                    <th scope="col">Balance</th>
+                                    <th scope="col">Description</th>
 
                                 </tr>
                             </thead>
@@ -74,7 +84,13 @@
 
                                         <td scope="row">
                                             <a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}">
-                                                {{ transaction.recurring_trans }}
+                                                {{ transaction.category }}
+                                            </a>
+                                        </td>
+
+                                        <td scope="row">
+                                            <a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}">
+                                                {{ transaction.transaction_frequency }}
                                             </a>
                                         </td>
 
@@ -86,7 +102,7 @@
 
                                         <td scope="row">
                                             <a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}">
-                                                $5,500.00
+                                                {{ transaction.description }}
                                             </a>
                                         </td>
 
@@ -132,22 +148,7 @@
             </div>
 
             <div class="col-lg-7 col-12">
-                <div class="custom-block custom-block-balance">
-                    <small>Your Balance</small>
-
-                    <h2 class="mt-2 mb-3">$254,800</h2>
-
-                    <div class="d-flex">
-                        <div>
-
-                        </div>
-
-                        <div class="ms-auto">
-                            <small>Account Holder</small>
-                            <p>Thomas</p>
-                        </div>
-                    </div>
-                </div>
+                {% include 'balance_snippet.html' %}
 
                 {% include 'chart_snippet.html' %}
 

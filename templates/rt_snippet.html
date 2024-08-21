@@ -2,8 +2,8 @@
 <div class="custom-block custom-block-transations">
     <h5 class="mb-4">Recent Transactions</h5>
 
-    <div class="d-flex flex-wrap align-items-center mb-4">
-        {% for transaction in user_transactions %}
+    {% for transaction in user_transactions %}
+        <div class="d-flex flex-wrap align-items-center mb-4">
             <div class="d-flex align-items-center">
                 <img src="static/images/profile/senior-man-white-sweater-eyeglasses.jpg" class="profile-image img-fluid" alt="">
                 <div>
@@ -24,8 +24,8 @@
                     <strong class="d-block text-danger"><span class="me-1">-</span> ${{ transaction.amount }}</strong>
                 {% endif %}
             </div>
-        {% endfor %}
-    </div>
+        </div>
+    {% endfor %}
 
     <div class="border-top pt-4 mt-4 text-center">
         <a class="btn custom-btn" href="{{ url_for('wallet') }}">

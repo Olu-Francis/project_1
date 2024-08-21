@@ -23,7 +23,7 @@ mydb = pymysql.connect(
 my_cursor = mydb.cursor()
 
 # Execute a SQL command
-# my_cursor.execute("CREATE DATABASE our_users")
+# my_cursor.execute("CREATE DATABASE test")
 
 # Close the connection
 my_cursor.close()

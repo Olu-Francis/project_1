@@ -8,34 +8,20 @@
                     <div class="title-group mb-3">
                         <h1 class="h2 mb-0">Overview</h1>
 
-                        <small class="text-muted">Hello Thomas, welcome back!</small>
+                        <small class="text-muted">Hello {{ current_user.name }}, welcome back!</small>
                     </div>
 
                     <div class="row my-4">
                         <div class="col-lg-7 col-12">
-                            <div class="custom-block custom-block-balance">
-                                <small>Your Balance</small>
 
-                                <h2 class="mt-2 mb-3">$254,800</h2>
+                            {% include 'balance_snippet.html' %}
 
-                                <div class="d-flex">
-                                    <div>
-
-                                    </div>
-
-                                    <div class="ms-auto">
-                                        <small>Account Holder</small>
-                                        <p>Thomas</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                        {% include 'chart_snippet.html' %}
+                            {% include 'chart_snippet.html' %}
 
                         </div>
 
                         <div class="col-lg-5 col-12">
-                            <div class="custom-block custom-block-profile-front custom-block-profile text-center bg-white">
+                            <div class="custom-block custom-block-profile-front custom-block-profile text-left bg-white">
                                 <div class="custom-block-profile-image-wrap mb-4">
                                     <img src="static/images/medium-shot-happy-man-smiling.jpg" class="custom-block-profile-image img-fluid" alt="">
 
@@ -45,24 +31,31 @@
                                 <p class="d-flex flex-wrap mb-2">
                                     <strong>Name:</strong>
 
-                                    <span>Thomas Edison</span>
+                                    <span>{{ current_user.name }}</span>
+                                </p>
+
+                                <p class="d-flex flex-wrap mb-2">
+                                    <strong>Username:</strong>
+
+                                    <span>{{ current_user.username }}</span>
                                 </p>
 
                                 <p class="d-flex flex-wrap mb-2">
                                     <strong>Email:</strong>
 
-                                    <a href="#">
-                                        thomas@site.com
-                                    </a>
+                                    <span>
+                                        {{ current_user.email }}
+                                    </span>
                                 </p>
 
-                                <p class="d-flex flex-wrap mb-0">
+                                <p class="d-flex flex-wrap mb-2">
                                     <strong>Phone:</strong>
 
-                                    <a href="#">
-                                        (60) 12 345 6789
-                                    </a>
+                                    <span>
+                                        {{ current_user.phone }}
+                                    </span>
                                 </p>
+
                             </div>
 
                             {% include 'rt_snippet.html' %}

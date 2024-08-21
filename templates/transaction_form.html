@@ -44,13 +44,33 @@
                 </div>
 
                 <div class="col-md-4 mb-3">
-                    {{ form.recurring_trans(class="form-check-input") }}
-                    {{ form.recurring_trans.label(class="form-label") }}
-                    {% if form.recurring_trans.errors %}
+                    {{ form.category.label(class="form-label") }}
+                    {{ form.category(class="form-control custom-select") }}
+                    {% if form.category.errors %}
                         <div class="invalid-feedback">
-                            {% for error in form.recurring_trans.errors %}
+                            {% for error in form.category.errors %}
                                 <span>{{ error }}</span>
                             {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="invalid-feedback">
+                            Please select a category!
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    {{ form.transaction_frequency.label(class="form-label") }}
+                    {{ form.transaction_frequency(class="form-control") }}
+                    {% if form.transaction_frequency.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.transaction_frequency.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="invalid-feedback">
+                            Please select a transaction frequency!
                         </div>
                     {% endif %}
                 </div>
@@ -71,6 +91,13 @@
                             Please indicate how long it will recur for!
                         </div>
                     {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="col-md-4 mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control") }}
                 </div>
             </div>
 

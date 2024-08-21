@@ -1,16 +1,29 @@
-import re
+import phonenumbers
+from phonenumbers import NumberParseException, PhoneNumberFormat
 from flask import Flask, render_template, flash, redirect, url_for, request
 from flask_wtf import FlaskForm
-from wtforms import (StringField, SubmitField, FileField, SelectField, BooleanField, IntegerField, ValidationError,
-                     TelField, PasswordField)
-from wtforms.validators import DataRequired, EqualTo, Length
+from wtforms import (StringField, SubmitField, SelectField, IntegerField, TextAreaField, TelField, PasswordField)
+from wtforms.validators import DataRequired, EqualTo
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
+import uuid as uuid
 
-TYPE_CHOICES = [('', 'Select a type'), ('Income', 'Income'), ('Expense', 'Expenses')]
+TYPE_CHOICES = [(None, 'Select a type'), ('Income', 'Income'), ('Expense', 'Expenses')]
+CATEGORY_CHOICES = [(None, 'Select a type'), ('Groceries', 'Groceries'), ('Utilities', 'Utilities'),
+                    ('Travel', 'Travel'), ('Miscellaneous', 'Miscellaneous'), ('Mortgage', 'Mortgage'),
+                    ('Weekend Fun', 'Weekend Fun'), ('Transportation', 'Transportation'), ('Dates', 'Dates'),
+                    ('Vehicle Maintenance', 'Vehicle Maintenance'), ('Vehicle Repairs', 'Vehicle Repairs'),
+                    ('School Fees', 'School Fees'), ('Take-outs', 'Take-outs'), ('Bills', 'Bills'),
+                    ('Rent', 'Rent'), ('Coffee, Teas, etc', 'Morning Rituals (coffee, tea,...)')]
+RECURRING_CHOICES = [(None, 'Select a type'), ('Annually', 'Annually'), ('Quarterly', 'Quarterly'),
+                     ('Trimester', 'Trimester'), ('Semester', 'Semester'), ('Monthly', 'Monthly'),
+                     ('Fortnightly', 'Fortnightly'), ('Weekly', 'Weekly'), ('Once', 'Once')]
+DURATION_CHOICES = [(None, 'Select a type'), (0, 'Once'), (1, 'A Month'), (2, 'Two Months'), (3, 'Three Months'),
+                    (4, 'Four Months'), (5, 'Five Months'), (6, 'Six Months'), (7, 'Seven Months'), (8, 'Eight Months'),
+                    (9, 'Nine Months'), (10, '10 Months'), (11, '11 Months'), (12, '12 Months')]
 
 # Create a Flask Instance
 app = Flask(__name__)
@@ -18,7 +31,7 @@ app.config['SECRET_KEY'] = "uyfhgfcnbfbgfdgfdhbdfgfdgf"
 # Database connection I need this: 'pip install mysql-connector' and 'pip install mysql-connector-python' and 'pip
 # install mysql-connector-python-rf'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://username:password@localhost/db_name'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootpass@localhost/our_users'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootpass@localhost/test'
 # Initialize the Database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -30,21 +43,22 @@ login_manager.login_view = "login"
 
 @login_manager.user_loader
 def load_user(user_id):
-    return Users.query.get(int(user_id))
+    return Users.query.get(user_id)
 
 
 # Create Model
 class Users(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.VARCHAR(60), primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
     name = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(180), nullable=False, unique=True)
     phone = db.Column(db.String(20), nullable=False)
     balance = db.Column(db.Integer, default=0, nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.now)
-    # Do Password Logic
     password_hash = db.Column(db.String(180), nullable=False)
+    transactions = db.relationship('Transactions', backref='users', lazy=True)
 
+    # Do Password Logic
     @property
     def password(self):
         raise AttributeError("Password is not a readable attribute!!")
@@ -62,12 +76,16 @@ class Users(db.Model, UserMixin):
 
 
 class Transactions(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.VARCHAR(60), primary_key=True)
     amount = db.Column(db.Integer, nullable=False)
     trans_type = db.Column(db.String(50), nullable=False)
-    recurring_trans = db.Column(db.Boolean, default=False)
+    category = db.Column(db.String(150), nullable=False)
+    transaction_frequency = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(300), nullable=True)
     duration = db.Column(db.Integer, nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.now)
+    # Foreign key to User
+    user_id = db.Column(db.VARCHAR(60), db.ForeignKey('users.id'), nullable=False)
 
     def __repr__(self):
         return '<Transaction %r>' % self.id
@@ -88,9 +106,12 @@ class UserForm(FlaskForm):
 
 class TransactionForm(FlaskForm):
     amount = IntegerField(label="Amount", validators=[DataRequired()])
-    trans_type = SelectField(label="Type", choices=TYPE_CHOICES, validators=[DataRequired()])
-    recurring_trans = BooleanField(label="Is this a recurring transaction")
-    duration = IntegerField(label="How long will this transaction occur", validators=[DataRequired()])
+    trans_type = SelectField(label="Transaction Type", choices=TYPE_CHOICES, validators=[DataRequired()])
+    category = SelectField(label="Category", choices=CATEGORY_CHOICES, validators=[DataRequired()])
+    transaction_frequency = SelectField(label="Frequency Of This Transaction", choices=RECURRING_CHOICES,
+                                        validators=[DataRequired()])
+    duration = SelectField(label="Duration Of This Transaction", choices=DURATION_CHOICES, validators=[DataRequired()])
+    description = TextAreaField(label="Additional Details")
     submit = SubmitField("Submit")
 
 
@@ -105,23 +126,38 @@ def add_user():
     name = None
     form = UserForm()
 
-    def validate_phone_number(phone_number):
-        pattern = re.compile(r'^\+?\d{10,15}$')
-        if pattern.match(phone_number):
-            return phone_number
-        else:
-            raise ValueError("Invalid phone number")
+    def process_phone_number(raw_phone_number, default_region='NG'):
+        try:
+            # Parse the phone number
+            phone_number = phonenumbers.parse(raw_phone_number, default_region)
+
+            # Check if the phone number is valid
+            if not phonenumbers.is_valid_number(phone_number):
+                raise ValueError("Invalid phone number")
+
+            # Format the number to the international format
+            formatted_number = phonenumbers.format_number(phone_number, PhoneNumberFormat.E164)
+            return formatted_number
+
+        except NumberParseException as f:
+            raise ValueError(f"Error parsing phone number: {f}")
 
     if form.validate_on_submit():
         user = Users.query.filter_by(email=form.email.data).first()
-        # Example usage
         try:
             if user is None:
                 # Hash the password
                 hashed_pw = generate_password_hash(form.password.data)
-                phone = validate_phone_number(form.phone.data)
-                user = Users(name=form.name.data, username=form.username.data, email=form.email.data, balance=0,
-                             phone=phone, password_hash=hashed_pw)
+                phone = process_phone_number(form.phone.data)
+                user = Users(
+                    id=str(uuid.uuid4()),
+                    name=form.name.data.title(),
+                    username=form.username.data,
+                    email=form.email.data,
+                    balance=0,
+                    phone=phone,
+                    password_hash=hashed_pw
+                )
                 db.session.add(user)
                 db.session.commit()
             name = form.name.data
@@ -222,48 +258,83 @@ def help_center():
 
 
 @app.route("/profile")
+@login_required
 def profile():
     date = datetime.now().year
     return render_template("profile.html", date=date)
 
 
-@app.route("/settings")
+@app.route("/settings", methods=["GET", "POST"])
+@login_required
 def settings():
-    date = datetime.now().year
-    return render_template("setting.html", date=date)
-
-
-# Get the individual transaction details and update transaction record in the database
-@app.route('/transaction/<int:transaction_id>', methods=["GET", "POST"])
-def transaction_detail(transaction_id):
-    form = TransactionForm()
-    transaction = Transactions.query.get_or_404(transaction_id)
+    form = UserForm()
+    user_to_update = Users.query.get_or_404(current_user.id)
     if request.method == "POST":
-        transaction.amount = form.amount.data
-        transaction.trans_type = form.trans_type.data
-        transaction.recurring_trans = form.recurring_trans.data
-        transaction.duration = form.duration.data
+        user_to_update.name = form.name.data
+        user_to_update.email = form.email.data
+        user_to_update.phone = form.phone.data
         try:
             db.session.commit()
-            flash("Transaction Updated Successfully")
+            flash("Profile Updated Successfully")
             date = datetime.now().year
-            return redirect(url_for('transaction_detail', transaction=transaction, date=date,
-                                    form=form, transaction_id=transaction_id))
+            return redirect(url_for('settings', date=date, form=form))
         except Exception as e:
             db.session.rollback()
             flash(f"Error!!... There was a problem updating your record: {str(e)}")
             date = datetime.now().year
-            return redirect(url_for('transaction_detail', transaction=transaction, date=date,
-                                    form=form, transaction_id=transaction_id))
+            return redirect(url_for('settings', date=date, form=form))
+    else:
+        date = datetime.now().year
+        return render_template("setting.html", date=date, form=form)
+
+
+# Get the individual transaction details and update transaction record in the database
+@app.route('/transaction/<string:transaction_id>', methods=["GET", "POST"])
+@login_required
+def transaction_detail(transaction_id):
+    form = TransactionForm()
+    transaction = Transactions.query.get_or_404(transaction_id)
+    if request.method == "POST":
+        if current_user.id == transaction.users.id:
+            transaction.amount = form.amount.data
+            transaction.trans_type = form.trans_type.data
+            transaction.transaction_frequency = form.transaction_frequency.data
+            transaction.duration = form.duration.data
+            transaction.category = form.category.data
+            transaction.description = form.description.data
+            transaction.user_id = current_user.id
+            try:
+                if transaction.trans_type == 'Income':
+                    current_user.balance += int(transaction.amount)*2
+                elif transaction.trans_type == 'Expense':
+                    current_user.balance -= int(transaction.amount)*2
+                db.session.commit()
+                flash("Transaction Updated Successfully")
+                date = datetime.now().year
+                return redirect(url_for('wallet', transaction=transaction, date=date,
+                                        form=form, transaction_id=transaction_id))
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error!!... There was a problem updating your record: {str(e)}")
+                date = datetime.now().year
+                return redirect(url_for('transaction_detail', transaction=transaction, date=date,
+                                        form=form, transaction_id=transaction_id))
+        else:
+            flash(f"You Are Not Authorized To Perform This Action")
+            return redirect(url_for('wallet'))
     else:
         form.amount.data = transaction.amount
         form.trans_type.data = transaction.trans_type
-        form.recurring_trans.data = transaction.recurring_trans
+        form.transaction_frequency.data = transaction.transaction_frequency
         form.duration.data = transaction.duration
+        transaction.category = form.category.data
+        transaction.description = form.description.data
         date = datetime.now().year
         return render_template('transaction_detail.html', transaction=transaction, date=date,
                                form=form, transaction_id=transaction_id)
 
+
+# TODO: Search functionality for searching through transactions
 
 # @app.route('/transaction/<int:transaction_id>', methods=["GET", "POST"])
 # def transaction_detail(transaction_id):
@@ -272,7 +343,7 @@ def transaction_detail(transaction_id):
 #     if request.method == "POST":
 #         transaction.amount = request.form["amount"]
 #         transaction.trans_type = request.form["trans_type"]
-#         transaction.recurring_trans = request.form["recurring_trans"]
+#         transaction.transaction_frequency = request.form["transaction_frequency"]
 #         transaction.duration = request.form["duration"]
 #         try:
 #             db.session.commit()
@@ -285,7 +356,7 @@ def transaction_detail(transaction_id):
 #     else:
 #         form.amount.data = transaction.amount
 #         form.trans_type.data = transaction.trans_type
-#         form.recurring_trans.data = transaction.recurring_trans
+#         form.transaction_frequency.data = transaction.transaction_frequency
 #         form.duration.data = transaction.duration
 #         date = datetime.now().year
 #         return render_template('transaction_detail.html', transaction=transaction, date=date,
@@ -298,43 +369,58 @@ def transaction_detail(transaction_id):
 
 
 @app.route("/wallet")
+@login_required
 def wallet():
-    user_transactions = Transactions.query.order_by(Transactions.date_added.desc()).all()
+    user = Users.query.get(current_user.id)
+    user_transactions = user.transactions
     date = datetime.now().year
     return render_template("wallet.html", user_transactions=user_transactions, date=date)
 
 
 # Create Transaction forms
 @app.route("/add-transaction", methods=['GET', 'POST'])
+@login_required
 def add_transaction_detail():
     form = TransactionForm()
+    user = Users.query.get_or_404(current_user.id)
+
     if form.validate_on_submit():
-        if form.recurring_trans.data == 1:
-            form.recurring_trans.data = True
-            new_transaction = Transactions(
-                amount=form.amount.data,
-                trans_type=form.trans_type.data,
-                recurring_trans=form.recurring_trans.data,
-                duration=form.duration.data
-            )
-            db.session.add(new_transaction)
-            db.session.commit()
-        else:
-            form.recurring_trans.data = False
-            new_transaction = Transactions(
-                amount=form.amount.data,
-                trans_type=form.trans_type.data,
-                recurring_trans=form.recurring_trans.data,
-                duration=form.duration.data
-            )
-            db.session.add(new_transaction)
-            db.session.commit()
+        # Determine if the transaction is recurring
+        recurring = form.transaction_frequency.data == 1
+
+        # Calculate the balance after the transaction
+        if form.trans_type.data == 'Income':
+            user.balance += int(form.amount.data)
+        elif form.trans_type.data == 'Expense':
+            user.balance -= int(form.amount.data)
+
+        balance = user.balance
+        # Create a new transaction
+        new_transaction = Transactions(
+            id=str(uuid.uuid4()),
+            amount=form.amount.data,
+            trans_type=form.trans_type.data,
+            category=form.category.data,
+            transaction_frequency=recurring,
+            duration=form.duration.data,
+            description=form.description.data,
+            user_id=current_user.id,
+        )
+        db.session.add(new_transaction)
+        db.session.commit()
+
+        # Update the user's current balance
+        user.balance = balance
+        db.session.commit()
+
         return redirect(url_for("wallet"))
+
     date = datetime.now().year
     return render_template('transaction_form.html', form=form, date=date)
+
     # amount = None
     # trans_type = None
-    # recurring_trans = None
+    # transaction_frequency = None
     # duration = None
     # form = TransactionForm()
     # # Validate Form
@@ -343,39 +429,58 @@ def add_transaction_detail():
     #     form.amount.data = None
     #     trans_type = form.trans_type.data
     #     form.trans_type.data = None
-    #     recurring_trans = form.recurring_trans.data
-    #     form.recurring_trans.data = None
+    #     transaction_frequency = form.transaction_frequency.data
+    #     form.transaction_frequency.data = None
     #     duration = form.duration.data
     #     form.duration.data = None
     #     flash("Details Added Successfully!!")
     #     render_template("transaction_detail.html",
     #                     amount=amount,
     #                     trans_type=trans_type,
-    #                     recurring_trans=recurring_trans,
+    #                     transaction_frequency=transaction_frequency,
     #                     duration=duration,
     #                     form=form)
     # return render_template("transaction_form.html",
     #                        amount=amount,
     #                        trans_type=trans_type,
-    #                        recurring_trans=recurring_trans,
+    #                        transaction_frequency=transaction_frequency,
     #                        duration=duration,
     #                        form=form, )
 
 
-@app.route("/delete/<int:id>")
+@app.route("/delete/<string:id>")
+@login_required
 def delete(id):
     delete_transaction = Transactions.query.get_or_404(id)
-    try:
-        db.session.delete(delete_transaction)
-        db.session.commit()
-        return redirect(url_for('wallet'))
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Error!!... There was a problem deleting your record: {str(e)}")
+    user = Users.query.get_or_404(current_user.id)
+    if current_user.id == delete_transaction.users.id:
+        try:
+            # Calculate the balance after the transaction
+            if delete_transaction.trans_type == 'Income':
+                user.balance -= int(delete_transaction.amount)
+            elif delete_transaction.trans_type == 'Expense':
+                user.balance += int(delete_transaction.amount)
+
+            balance_after = user.balance
+
+            # Update the user's current balance
+            user.balance = balance_after
+            db.session.commit()
+
+            # Delete the transaction
+            db.session.delete(delete_transaction)
+            db.session.commit()
+            return redirect(url_for('wallet'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error!!... There was a problem deleting your record: {str(e)}")
+            return redirect(url_for('wallet'))
+    else:
+        flash(f"You Are Not Authorized To Perform This Action")
         return redirect(url_for('wallet'))
 
 
-@app.route("/delete_user/<int:id>")
+@app.route("/delete_user/<string:id>")
 def delete_user(id):
     delete_users = Users.query.get_or_404(id)
     try:
@@ -393,6 +498,7 @@ def delete_user(id):
 # Invalid URL Page
 @app.errorhandler(404)
 def page_not_found(e):
+    print(e)
     date = datetime.now().year
     return render_template("404.html", date=date), 404
 
@@ -400,6 +506,7 @@ def page_not_found(e):
 # Internal Server Error Page
 @app.errorhandler(500)
 def page_not_found(e):
+    print(e)
     date = datetime.now().year
     return render_template("500.html", date=date), 500
 

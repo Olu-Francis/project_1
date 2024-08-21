@@ -1,38 +1,70 @@
-{% extends 'base.html' %}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-{% block content %}
+        <title>Login</title>
 
-<main class="main-wrapper col-md-9 ms-sm-auto py-4 col-lg-9 px-md-4 border-start">
+        <!-- CSS FILES -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
 
-	{% for message in get_flashed_messages() %}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-		<div class="alert alert-warning alert-dismissible fade show" role="alert">
-		  {{ message }}
-		  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-		</div>
+		<link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sign-in/">
 
+        <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;700&display=swap" rel="stylesheet">
 
-	{% endfor %}
-    		<h5>Login!</h5>
-		<br/><br/>
-	<div class="shadow p-3 mb-5 bg-body rounded">
-		<form method="POST">
-			{{ form.hidden_tag() }}
+        <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
 
-			{{ form.username.label(class="form-label") }}
+        <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
 
-			{{ form.username(class="form-control") }}
-			<br/>
+        <link href="{{ url_for('static', filename='css/apexcharts.css') }}" rel="stylesheet">
 
-			{{ form.password.label(class="form-label") }}
+		<link href="{{ url_for('static', filename='css/login.css') }}" rel="stylesheet">
 
-			{{ form.password(class="form-control") }}
-			<br/>
+        <link href="{{ url_for('static', filename='css/tooplate-mini-finance.css') }}" rel="stylesheet">
 
-			{{ form.submit(class="btn btn-secondary") }}
+    </head>
 
+    <body class="text-center">
+		{% include 'navbar.html' %}
 
-		</form>
-	</div>
+		<main class="form-signin">
+			<h5 class="h2 mb-3 fw-normal">Welcome Back Please log in!</h5>
+			{% for message in get_flashed_messages() %}
 
-{% endblock %}
+				<div class="alert alert-warning show" role="alert">
+				  {{ message }}
+				</div>
+
+			{% endfor %}
+			<div class="shadow p-3 mb-5 bg-body rounded">
+				<form method="POST">
+					{{ form.hidden_tag() }}
+
+					<div class="form-floating">
+						{{ form.username(class="form-control", id="floatingInput") }}
+						{{ form.username.label(for="floatingInput") }}
+					</div>
+					<br/>
+
+					<div class="form-floating">
+						{{ form.password(class="form-control", id="floatingPassword") }}
+						{{ form.password.label(for="floatingPassword") }}
+					</div>
+					<br/>
+					<div class="checkbox mb-3">
+						<label>
+							<input type="checkbox" value="remember-me"> Remember me
+						</label>
+					</div>
+
+					{{ form.submit(class="w-100 btn btn-lg btn-secondary") }}
+
+					<p class="mt-5 mb-3 text-muted copyright-text">Copyright ©{{ date }} Olu-Francis Daniel</p>
+
+				</form>
+			</div>
+
+		</main>
