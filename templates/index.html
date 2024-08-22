@@ -23,7 +23,8 @@
                         <div class="col-lg-5 col-12">
                             <div class="custom-block custom-block-profile-front custom-block-profile text-left bg-white">
                                 <div class="custom-block-profile-image-wrap mb-4">
-                                    <img src="static/images/medium-shot-happy-man-smiling.jpg" class="custom-block-profile-image img-fluid" alt="">
+                                    <img src="{{url_for('static', filename = 'images/' + current_user.profile_pic )}}" class="custom-block-profile-image img-fluid" alt="profile pic">
+
 
                                     <a href="{{ url_for('settings') }}" class="bi-pencil-square custom-block-edit-icon"></a>
                                 </div>

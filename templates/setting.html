@@ -37,7 +37,7 @@
                         <div class="tab-pane fade show active" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
                             <h6 class="mb-4">User Profile</h6>
 
-                            <form class="custom-form profile-form" action="{{ url_for('settings') }}" method="POST" role="form">
+                            <form class="custom-form profile-form" action="{{ url_for('settings') }}" method="POST" role="form" enctype="multipart/form-data">
 
                                 {{ form.hidden_tag() }}
 
@@ -54,9 +54,9 @@
                                 {{ form.phone(class="form-control") }}
 
                                 <div class="input-group mb-1">
-                                    <img src="static/images/profile/senior-man-white-sweater-eyeglasses.jpg" class="profile-image img-fluid" alt="">
+                                    <img src="{{url_for('static', filename = 'images/' + current_user.profile_pic )}}" class="profile-image img-fluid" alt="profile pic">
 
-                                    <input type="file" class="form-control" id="inputGroupFile02">
+                                    {{ form.profile_pic(class="form-control", id="inputGroupFile02") }}
                                 </div>
                                 <br>
 

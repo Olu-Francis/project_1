@@ -2,6 +2,7 @@ import phonenumbers
 from phonenumbers import NumberParseException, PhoneNumberFormat
 from flask import Flask, render_template, flash, redirect, url_for, request
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField
 from wtforms import (StringField, SubmitField, SelectField, IntegerField, TextAreaField, TelField, PasswordField)
 from wtforms.validators import DataRequired, EqualTo
 from flask_sqlalchemy import SQLAlchemy
@@ -9,7 +10,9 @@ from flask_migrate import Migrate
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
+from werkzeug.utils import secure_filename
 import uuid as uuid
+import os
 
 TYPE_CHOICES = [(None, 'Select a type'), ('Income', 'Income'), ('Expense', 'Expenses')]
 CATEGORY_CHOICES = [(None, 'Select a type'), ('Groceries', 'Groceries'), ('Utilities', 'Utilities'),
@@ -24,6 +27,8 @@ RECURRING_CHOICES = [(None, 'Select a type'), ('Annually', 'Annually'), ('Quarte
 DURATION_CHOICES = [(None, 'Select a type'), (0, 'Once'), (1, 'A Month'), (2, 'Two Months'), (3, 'Three Months'),
                     (4, 'Four Months'), (5, 'Five Months'), (6, 'Six Months'), (7, 'Seven Months'), (8, 'Eight Months'),
                     (9, 'Nine Months'), (10, '10 Months'), (11, '11 Months'), (12, '12 Months')]
+UPLOAD_FOLDER = "static/images/"
+
 
 # Create a Flask Instance
 app = Flask(__name__)
@@ -35,6 +40,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootpass@localhost
 # Initialize the Database
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+# Set the upload folder
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 # Flask Login To do
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -54,6 +61,7 @@ class Users(db.Model, UserMixin):
     email = db.Column(db.String(180), nullable=False, unique=True)
     phone = db.Column(db.String(20), nullable=False)
     balance = db.Column(db.Integer, default=0, nullable=False)
+    profile_pic = db.Column(db.String(100), nullable=True)
     date_added = db.Column(db.DateTime, default=datetime.now)
     password_hash = db.Column(db.String(180), nullable=False)
     transactions = db.relationship('Transactions', backref='users', lazy=True)
@@ -98,6 +106,7 @@ class UserForm(FlaskForm):
     username = StringField(label="Username", validators=[DataRequired()])
     email = StringField(label="Email", validators=[DataRequired()])
     phone = TelField(label="Phone")
+    profile_pic = FileField(label="Profile Pic")
     password = PasswordField(label="Password", validators=[DataRequired(), EqualTo("password1",
                                                                                    message="Password Must Match")])
     password1 = PasswordField(label="Re-enter Password", validators=[DataRequired()])
@@ -121,60 +130,179 @@ class PasswordForm(FlaskForm):
     submit = SubmitField("Submit")
 
 
+# @app.route('/user/add', methods=['GET', 'POST'])
+# def add_user():
+#     name = None
+#     form = UserForm()
+#
+#     def process_phone_number(raw_phone_number, default_region='NG'):
+#         try:
+#             # Parse the phone number
+#             phone_number = phonenumbers.parse(raw_phone_number, default_region)
+#
+#             # Check if the phone number is valid
+#             if not phonenumbers.is_valid_number(phone_number):
+#                 raise ValueError("Invalid phone number")
+#
+#             # Format the number to the international format
+#             formatted_number = phonenumbers.format_number(phone_number, PhoneNumberFormat.E164)
+#             return formatted_number
+#
+#         except NumberParseException as f:
+#             raise ValueError(f"Error parsing phone number: {f}")
+#
+#     if form.validate_on_submit():
+#         user = Users.query.filter_by(email=form.email.data).first()
+#         try:
+#             if user is None:
+#                 # Hash the password
+#                 hashed_pw = generate_password_hash(form.password.data)
+#                 phone = process_phone_number(form.phone.data)
+#                 image = request.files['profile_pic']
+#                 # Grab image name
+#                 pic_filename = secure_filename(image.profile_pic.filename)
+#                 # Set UUID for image
+#                 pic_name = str(current_user.id) + '_' + pic_filename
+#                 # Save the image
+#                 image.profile_pic.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+#                 user = Users(
+#                     id=str(uuid.uuid4()),
+#                     name=form.name.data.title(),
+#                     username=form.username.data,
+#                     email=form.email.data,
+#                     balance=0,
+#                     phone=phone,
+#                     password_hash=hashed_pw,
+#                     profile_pic=pic_name,
+#                 )
+#                 db.session.add(user)
+#                 db.session.commit()
+#             name = form.name.data
+#             form.name.data = ''
+#             form.username.data = ''
+#             form.email.data = ''
+#             form.phone.data = ''
+#             form.password.data = ''
+#
+#             flash("User Added Successfully!")
+#         except ValueError as e:
+#             print(e)
+#     our_users = Users.query.order_by(Users.date_added)
+#     return render_template("add_user.html",
+#                            form=form,
+#                            name=name,
+#                            our_users=our_users)
+# @app.route('/user/add', methods=['GET', 'POST'])
+# def add_user():
+#     form = UserForm()
+#     name = None
+#
+#     if form.validate_on_submit():
+#         user = Users.query.filter_by(email=form.email.data).first()
+#
+#         if user is None:
+#             try:
+#                 # Process and validate the phone number
+#                 phone = process_phone_number(form.phone.data)
+#
+#                 # Hash the password
+#                 hashed_pw = generate_password_hash(form.password.data)
+#
+#                 # Handle profile picture upload
+#                 image = request.files['profile_pic']
+#                 pic_filename = secure_filename(image.filename)
+#                 pic_name = f"{uuid.uuid4()}_{pic_filename}"
+#                 image.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+#
+#                 # Create and add the new user
+#                 user = Users(
+#                     id=str(uuid.uuid4()),
+#                     name=form.name.data.title(),
+#                     username=form.username.data,
+#                     email=form.email.data,
+#                     balance=0,
+#                     phone=phone,
+#                     password_hash=hashed_pw,
+#                     profile_pic=pic_name,
+#                 )
+#                 db.session.add(user)
+#                 db.session.commit()
+#
+#                 flash("User Added Successfully!")
+#                 # Clear form fields
+#                 form = UserForm()
+#             except ValueError as e:
+#                 flash(str(e), "error")
+#
+#         else:
+#             flash("Email already registered.", "error")
+#
+#     our_users = Users.query.order_by(Users.date_added).all()
+#
+#     return render_template("add_user.html", form=form, name=name, our_users=our_users)
+
 @app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
-    name = None
     form = UserForm()
-
-    def process_phone_number(raw_phone_number, default_region='NG'):
-        try:
-            # Parse the phone number
-            phone_number = phonenumbers.parse(raw_phone_number, default_region)
-
-            # Check if the phone number is valid
-            if not phonenumbers.is_valid_number(phone_number):
-                raise ValueError("Invalid phone number")
-
-            # Format the number to the international format
-            formatted_number = phonenumbers.format_number(phone_number, PhoneNumberFormat.E164)
-            return formatted_number
-
-        except NumberParseException as f:
-            raise ValueError(f"Error parsing phone number: {f}")
+    name = None
 
     if form.validate_on_submit():
-        user = Users.query.filter_by(email=form.email.data).first()
-        try:
-            if user is None:
-                # Hash the password
-                hashed_pw = generate_password_hash(form.password.data)
+        existing_user = Users.query.filter_by(email=form.email.data).first()
+
+        if existing_user is None:
+            try:
+                # Process and validate the phone number
                 phone = process_phone_number(form.phone.data)
-                user = Users(
+
+                # Handle profile picture upload
+                image = request.files.get('profile_pic')
+                if image and image.filename != '':
+                    pic_filename = secure_filename(image.filename)
+                    pic_name = f"{uuid.uuid4()}_{pic_filename}"
+                    image.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+                else:
+                    pic_name = 'profile/senior-man-white-sweater-eyeglasses.jpg'  # Set to a default image
+
+                # Create and add the new user
+                new_user = Users(
                     id=str(uuid.uuid4()),
                     name=form.name.data.title(),
                     username=form.username.data,
                     email=form.email.data,
                     balance=0,
                     phone=phone,
-                    password_hash=hashed_pw
+                    password_hash=generate_password_hash(form.password.data),
+                    profile_pic=pic_name,
                 )
-                db.session.add(user)
+                db.session.add(new_user)
                 db.session.commit()
-            name = form.name.data
-            form.name.data = ''
-            form.username.data = ''
-            form.email.data = ''
-            form.phone.data = ''
-            form.password.data = ''
 
-            flash("User Added Successfully!")
-        except ValueError as e:
-            print(e)
-    our_users = Users.query.order_by(Users.date_added)
-    return render_template("add_user.html",
-                           form=form,
-                           name=name,
-                           our_users=our_users)
+                flash("User added successfully!", "success")
+                return redirect(url_for('add_user'))
+            except ValueError as e:
+                flash(str(e), "danger")
+
+        else:
+            flash("Email already registered.", "danger")
+
+    # Fetch users to display on the page
+    our_users = Users.query.order_by(Users.date_added).all()
+
+    return render_template("add_user.html", form=form, name=name, our_users=our_users)
+
+
+def process_phone_number(raw_phone_number, default_region='NG'):
+    try:
+        # Parse the phone number
+        phone_number = phonenumbers.parse(raw_phone_number, default_region)
+
+        # Validate and format the phone number
+        if not phonenumbers.is_valid_number(phone_number):
+            raise ValueError("Invalid phone number")
+
+        return phonenumbers.format_number(phone_number, PhoneNumberFormat.E164)
+    except NumberParseException as e:
+        raise ValueError(f"Error parsing phone number: {e}")
 
 
 # Create Password Test Page
@@ -241,6 +369,11 @@ def logout():
     flash("You just logged out!")
     return redirect(url_for("login"))
 
+# Pass data to Extended HTML files
+# @app.context_processor
+# def base():
+#     pass
+
 
 # Create route decorators
 @app.route("/")
@@ -273,6 +406,16 @@ def settings():
         user_to_update.name = form.name.data
         user_to_update.email = form.email.data
         user_to_update.phone = form.phone.data
+        user_to_update.profile_pic = request.files['profile_pic']
+        # Grab image name
+        pic_filename = secure_filename(user_to_update.profile_pic.filename)
+        # Set UUID for image
+        pic_name = str(current_user.id) + '_' + pic_filename
+        # Save the image
+        user_to_update.profile_pic.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
+        # Change it to a string to save to the db
+        user_to_update.profile_pic = pic_name
+
         try:
             db.session.commit()
             flash("Profile Updated Successfully")
@@ -284,6 +427,9 @@ def settings():
             date = datetime.now().year
             return redirect(url_for('settings', date=date, form=form))
     else:
+        form.name.data = user_to_update.name
+        form.email.data = user_to_update.email
+        form.phone.data = user_to_update.phone
         date = datetime.now().year
         return render_template("setting.html", date=date, form=form)
 

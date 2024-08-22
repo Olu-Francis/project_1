@@ -19,7 +19,8 @@
 
                         <div class="col-lg-3 col-12 mb-4 mb-lg-0">
                             <div class="custom-block-profile-image-wrap">
-                                <img src="static/images/medium-shot-happy-man-smiling.jpg" class="custom-block-profile-image img-fluid" alt="">
+                                <img src="{{url_for('static', filename = 'images/' + current_user.profile_pic )}}" class="custom-block-profile-image img-fluid" alt="profile pic">
+
 
                                 <a href="{{ url_for('settings')}}" class="bi-pencil-square custom-block-edit-icon"></a>
                             </div>

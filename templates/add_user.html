@@ -35,7 +35,7 @@
 		<h5>User List:</h5>
 		<br/>
 	<div class="shadow p-3 mb-5 bg-body rounded">
-		<form action="/user/add" method="POST">
+		<form action="{{ url_for('add_user') }}" method="POST" enctype="multipart/form-data">
 			{{ form.hidden_tag() }}
 
 			{{ form.name.label(class="form-label") }}
@@ -56,6 +56,11 @@
 			{{ form.phone.label(class="form-label") }}
 
 			{{ form.phone(class="form-control") }}
+			<br/>
+
+			{{ form.profile_pic.label(class="form-label") }}
+
+			{{ form.profile_pic(class="form-control", id="inputGroupFile02") }}
 			<br/>
 
 			{{ form.password.label(class="form-label") }}

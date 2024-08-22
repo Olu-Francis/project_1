@@ -125,12 +125,17 @@
 
                 <div class="dropdown px-3">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="{{ url_for('static', filename='images/medium-shot-happy-man-smiling.jpg') }}" class="profile-image img-fluid" alt="">
+                        <img src="{{url_for('static', filename = 'images/' + current_user.profile_pic )}}" class="profile-image img-fluid" alt="profile pic">
+
                     </a>
                     <ul class="dropdown-menu bg-white shadow">
                         <li>
                             <div class="dropdown-menu-profile-thumb d-flex">
-                                <img src="{{ url_for('static', filename='images/medium-shot-happy-man-smiling.jpg') }}" class="profile-image img-fluid me-3" alt="">
+                                {% if current_user.profile_pic %}
+                                    <img src="{{url_for('static', filename = 'images/' + current_user.profile_pic )}}" class="profile-image img-fluid me-3" alt="profile pic">
+                                {% else %}
+                                    <img src="{{url_for('static', filename = 'images/profile/senior-man-white-sweater-eyeglasses.jpg')}}" class="profile-image img-fluid me-3" alt="profile pic">
+                                {% endif %}
 
                                 <div class="d-flex flex-column">
                                     <small>{{ current_user.name }}</small>
