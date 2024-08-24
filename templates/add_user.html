@@ -22,7 +22,7 @@
 
 	{% for our_user in our_users %}
 		<tr>
-		<td>{{ our_user.id }}. <a href="{{ url_for('delete_user', id=our_user.id)}}">{{ our_user.name }}</a> - {{ our_user.email }} - {{ our_user.phone }} -
+		<td>{{ our_user.id }}. <a href="{{ url_for('delete_user', id=our_user.id)}}">{{ our_user.first_name }}</a> - {{ our_user.email }} - {{ our_user.phone }} -
 		PW: {{ our_user.username }} -
 			<a href="{{ url_for('delete_user', id=our_user.id)}}">Delete</a></td>
 		</tr>
@@ -38,9 +38,22 @@
 		<form action="{{ url_for('add_user') }}" method="POST" enctype="multipart/form-data">
 			{{ form.hidden_tag() }}
 
-			{{ form.name.label(class="form-label") }}
+			<div class="d-flex">
 
-			{{ form.name(class="form-control") }}
+				<div class="me-3">
+					{{ form.first_name.label(class="form-label") }}
+
+					{{ form.first_name(class="form-control") }}
+				</div>
+
+				<div class="ms-2">
+					{{ form.last_name.label(class="form-label") }}
+
+					{{ form.last_name(class="form-control") }}
+				</div>
+
+			</div>
+
 			<br/>
 
 			{{ form.username.label(class="form-label") }}
@@ -83,7 +96,7 @@
 
 	{% for our_user in our_users %}
 		<tr>
-		<td>{{ our_user.id }}. <a href="{{ url_for('delete_user', id=our_user.id)}}">{{ our_user.name }}</a> - {{ our_user.email }} - {{ our_user.phone }} -
+		<td>{{ our_user.id }}. <a href="{{ url_for('delete_user', id=our_user.id)}}">{{ our_user.first_name }}</a> - {{ our_user.email }} - {{ our_user.phone }} -
 		PW: {{ our_user.username }} -
 		<a href="{{ url_for('delete_user', id=our_user.id)}}">Delete</a></td>
 		</tr>

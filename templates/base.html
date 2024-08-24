@@ -39,80 +39,82 @@
 
         <script type="text/javascript">
             let pie_option = {
-              series: [13, 43, 22],
-              chart: {
-              width: 380,
-              type: 'pie',
-            },
-            labels: ['Balance', 'Expense', 'Credit Loan',],
-            responsive: [{
-              breakpoint: 480,
-              options: {
+                series: [{{ balance }}, {{ expense_data|sum }}, {{ income_data|sum }}],
                 chart: {
-                  width: 200
+                    width: 380,
+                    type: 'pie',
                 },
-                legend: {
-                  position: 'bottom'
-                }
-              }
-            }]
+                labels: ['Balance', 'Expense', 'Income'],
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            width: 200
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }]
             };
 
             let pie_chart = new ApexCharts(document.querySelector("#pie-chart"), pie_option);
             pie_chart.render();
         </script>
 
+        {% if income_data %}
         <script type="text/javascript">
             let graph_option = {
-              series: [{
-              name: 'Income',
-              data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
-            }, {
-              name: 'Expense',
-              data: [76, 85, 101, 98, 87, 105, 91, 114, 94]
-            },],
-              chart: {
-              type: 'bar',
-              height: 350
-            },
-            plotOptions: {
-              bar: {
-                horizontal: false,
-                columnWidth: '55%',
-                endingShape: 'rounded'
-              },
-            },
-            dataLabels: {
-              enabled: false
-            },
-            stroke: {
-              show: true,
-              width: 2,
-              colors: ['transparent']
-            },
-            xaxis: {
-              categories: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-            },
-            yaxis: {
-              title: {
-                text: '$ (thousands)'
-              }
-            },
-            fill: {
-              opacity: 1
-            },
-            tooltip: {
-              y: {
-                formatter: function (val) {
-                  return "$ " + val + " thousands"
+                series: [{
+                    name: 'Income',
+                    data: {{ income_data | tojson }}
+                }, {
+                    name: 'Expense',
+                    data: {{ expense_data | tojson }}
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 350
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '55%',
+                        endingShape: 'rounded'
+                    },
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                },
+                yaxis: {
+                    title: {
+                        text: '$ (thousands)'
+                    }
+                },
+                fill: {
+                    opacity: 1
+                },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return "$ " + val + " thousands"
+                        }
+                    }
                 }
-              }
-            }
             };
 
             let graph_chart = new ApexCharts(document.querySelector("#chart"), graph_option);
             graph_chart.render();
         </script>
+        {% endif %}
 
     </body>
 </html>

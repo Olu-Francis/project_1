@@ -15,9 +15,10 @@ import uuid as uuid
 import os
 
 TYPE_CHOICES = [(None, 'Select a type'), ('Income', 'Income'), ('Expense', 'Expenses')]
-CATEGORY_CHOICES = [(None, 'Select a type'), ('Groceries', 'Groceries'), ('Utilities', 'Utilities'),
-                    ('Travel', 'Travel'), ('Miscellaneous', 'Miscellaneous'), ('Mortgage', 'Mortgage'),
-                    ('Weekend Fun', 'Weekend Fun'), ('Transportation', 'Transportation'), ('Dates', 'Dates'),
+CATEGORY_CHOICES = [(None, 'Select a type'), ('Freelance', 'Freelance'), ('Salary', 'Salary'), ('Gift', 'Gift'),
+                    ('Groceries', 'Groceries'), ('Utilities', 'Utilities'), ('Travel', 'Travel'),
+                    ('Miscellaneous', 'Miscellaneous'), ('Mortgage', 'Mortgage'), ('Weekend Fun', 'Weekend Fun'),
+                    ('Transportation', 'Transportation'), ('Dates', 'Dates'),
                     ('Vehicle Maintenance', 'Vehicle Maintenance'), ('Vehicle Repairs', 'Vehicle Repairs'),
                     ('School Fees', 'School Fees'), ('Take-outs', 'Take-outs'), ('Bills', 'Bills'),
                     ('Rent', 'Rent'), ('Coffee, Teas, etc', 'Morning Rituals (coffee, tea,...)')]
@@ -28,7 +29,6 @@ DURATION_CHOICES = [(None, 'Select a type'), (0, 'Once'), (1, 'A Month'), (2, 'T
                     (4, 'Four Months'), (5, 'Five Months'), (6, 'Six Months'), (7, 'Seven Months'), (8, 'Eight Months'),
                     (9, 'Nine Months'), (10, '10 Months'), (11, '11 Months'), (12, '12 Months')]
 UPLOAD_FOLDER = "static/images/"
-
 
 # Create a Flask Instance
 app = Flask(__name__)
@@ -57,7 +57,8 @@ def load_user(user_id):
 class Users(db.Model, UserMixin):
     id = db.Column(db.VARCHAR(60), primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
-    name = db.Column(db.String(200), nullable=False)
+    first_name = db.Column(db.String(200), nullable=False)
+    last_name = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(180), nullable=False, unique=True)
     phone = db.Column(db.String(20), nullable=False)
     balance = db.Column(db.Integer, default=0, nullable=False)
@@ -102,7 +103,8 @@ class Transactions(db.Model):
 # Create a Form Class
 
 class UserForm(FlaskForm):
-    name = StringField(label="Name", validators=[DataRequired()])
+    first_name = StringField(label="First Name", validators=[DataRequired()])
+    last_name = StringField(label="Last Name", validators=[DataRequired()])
     username = StringField(label="Username", validators=[DataRequired()])
     email = StringField(label="Email", validators=[DataRequired()])
     phone = TelField(label="Phone")
@@ -132,7 +134,7 @@ class PasswordForm(FlaskForm):
 
 # @app.route('/user/add', methods=['GET', 'POST'])
 # def add_user():
-#     name = None
+#     first_name = None
 #     form = UserForm()
 #
 #     def process_phone_number(raw_phone_number, default_region='NG'):
@@ -159,7 +161,7 @@ class PasswordForm(FlaskForm):
 #                 hashed_pw = generate_password_hash(form.password.data)
 #                 phone = process_phone_number(form.phone.data)
 #                 image = request.files['profile_pic']
-#                 # Grab image name
+#                 # Grab image first_name
 #                 pic_filename = secure_filename(image.profile_pic.filename)
 #                 # Set UUID for image
 #                 pic_name = str(current_user.id) + '_' + pic_filename
@@ -167,7 +169,7 @@ class PasswordForm(FlaskForm):
 #                 image.profile_pic.save(os.path.join(app.config['UPLOAD_FOLDER'], pic_name))
 #                 user = Users(
 #                     id=str(uuid.uuid4()),
-#                     name=form.name.data.title(),
+#                     first_name=form.first_name.data.title(),
 #                     username=form.username.data,
 #                     email=form.email.data,
 #                     balance=0,
@@ -177,8 +179,8 @@ class PasswordForm(FlaskForm):
 #                 )
 #                 db.session.add(user)
 #                 db.session.commit()
-#             name = form.name.data
-#             form.name.data = ''
+#             first_name = form.first_name.data
+#             form.first_name.data = ''
 #             form.username.data = ''
 #             form.email.data = ''
 #             form.phone.data = ''
@@ -190,12 +192,12 @@ class PasswordForm(FlaskForm):
 #     our_users = Users.query.order_by(Users.date_added)
 #     return render_template("add_user.html",
 #                            form=form,
-#                            name=name,
+#                            first_name=first_name,
 #                            our_users=our_users)
 # @app.route('/user/add', methods=['GET', 'POST'])
 # def add_user():
 #     form = UserForm()
-#     name = None
+#     first_name = None
 #
 #     if form.validate_on_submit():
 #         user = Users.query.filter_by(email=form.email.data).first()
@@ -217,7 +219,7 @@ class PasswordForm(FlaskForm):
 #                 # Create and add the new user
 #                 user = Users(
 #                     id=str(uuid.uuid4()),
-#                     name=form.name.data.title(),
+#                     first_name=form.first_name.data.title(),
 #                     username=form.username.data,
 #                     email=form.email.data,
 #                     balance=0,
@@ -239,7 +241,7 @@ class PasswordForm(FlaskForm):
 #
 #     our_users = Users.query.order_by(Users.date_added).all()
 #
-#     return render_template("add_user.html", form=form, name=name, our_users=our_users)
+#     return render_template("add_user.html", form=form, first_name=first_name, our_users=our_users)
 
 @app.route('/user/add', methods=['GET', 'POST'])
 def add_user():
@@ -266,7 +268,8 @@ def add_user():
                 # Create and add the new user
                 new_user = Users(
                     id=str(uuid.uuid4()),
-                    name=form.name.data.title(),
+                    first_name=form.first_name.data.title(),
+                    last_name=form.last_name.data.title(),
                     username=form.username.data,
                     email=form.email.data,
                     balance=0,
@@ -369,6 +372,7 @@ def logout():
     flash("You just logged out!")
     return redirect(url_for("login"))
 
+
 # Pass data to Extended HTML files
 # @app.context_processor
 # def base():
@@ -380,8 +384,21 @@ def logout():
 @login_required
 def index():
     user_transactions = Transactions.query.order_by(Transactions.date_added.desc()).limit(limit=4)
+    user = Users.query.get(current_user.id)
+    incomes = Transactions.query.filter_by(trans_type='income')
+    expenses = Transactions.query.filter_by(trans_type='expense')
+    # user_data = {}
+    user_data = {
+        'balance': user.balance,
+        'income': [inc.amount for inc in incomes],
+        'expense': [exs.amount for exs in expenses],
+    }
+    income_data = user_data['income']
+    expense_data = user_data['expense']
+    balance = user_data['balance']
     date = datetime.now().year
-    return render_template("index.html", user_transactions=user_transactions, date=date)
+    return render_template("index.html", user_transactions=user_transactions, date=date,
+                           income_data=income_data, expense_data=expense_data, balance=balance)
 
 
 @app.route("/help-center")
@@ -403,11 +420,12 @@ def settings():
     form = UserForm()
     user_to_update = Users.query.get_or_404(current_user.id)
     if request.method == "POST":
-        user_to_update.name = form.name.data
+        user_to_update.first_name = form.first_name.data
+        user_to_update.last_name = form.last_name.data
         user_to_update.email = form.email.data
         user_to_update.phone = form.phone.data
         user_to_update.profile_pic = request.files['profile_pic']
-        # Grab image name
+        # Grab image first_name
         pic_filename = secure_filename(user_to_update.profile_pic.filename)
         # Set UUID for image
         pic_name = str(current_user.id) + '_' + pic_filename
@@ -427,7 +445,8 @@ def settings():
             date = datetime.now().year
             return redirect(url_for('settings', date=date, form=form))
     else:
-        form.name.data = user_to_update.name
+        form.first_name.data = user_to_update.first_name
+        form.last_name.data = user_to_update.last_name
         form.email.data = user_to_update.email
         form.phone.data = user_to_update.phone
         date = datetime.now().year
@@ -451,9 +470,9 @@ def transaction_detail(transaction_id):
             transaction.user_id = current_user.id
             try:
                 if transaction.trans_type == 'Income':
-                    current_user.balance += int(transaction.amount)*2
+                    current_user.balance += int(transaction.amount) * 2
                 elif transaction.trans_type == 'Expense':
-                    current_user.balance -= int(transaction.amount)*2
+                    current_user.balance -= int(transaction.amount) * 2
                 db.session.commit()
                 flash("Transaction Updated Successfully")
                 date = datetime.now().year
@@ -519,8 +538,20 @@ def transaction_detail(transaction_id):
 def wallet():
     user = Users.query.get(current_user.id)
     user_transactions = user.transactions
+    incomes = Transactions.query.filter_by(trans_type='income')
+    expenses = Transactions.query.filter_by(trans_type='expense')
+    # user_data = {}
+    user_data = {
+        'balance': user.balance,
+        'income': [inc.amount for inc in incomes],
+        'expense': [exs.amount for exs in expenses],
+    }
+    income_data = user_data['income']
+    expense_data = user_data['expense']
+    balance = user_data['balance']
     date = datetime.now().year
-    return render_template("wallet.html", user_transactions=user_transactions, date=date)
+    return render_template("wallet.html", user_transactions=user_transactions, date=date,
+                           income_data=income_data, expense_data=expense_data, balance=balance)
 
 
 # Create Transaction forms
@@ -629,7 +660,10 @@ def delete(id):
 @app.route("/delete_user/<string:id>")
 def delete_user(id):
     delete_users = Users.query.get_or_404(id)
+    user_transactions = Transactions.query.where(Transactions.user_id == id)
     try:
+        for tran in user_transactions:
+            db.session.delete(tran)
         db.session.delete(delete_users)
         db.session.commit()
         return redirect(url_for('add_user'))
