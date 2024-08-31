@@ -34,7 +34,7 @@
                         <p>{{ transaction.trans_type }}</p>
                     </div>
                     <div class="custom-block-transation-detail-item mt-4">
-                        <h6>Type</h6>
+                        <h6>Category</h6>
                         <p>{{ transaction.category }}</p>
                     </div>
                     <div class="custom-block-transation-detail-item mt-4 mx-auto px-4">
@@ -60,7 +60,7 @@
 
                 {% if transaction.users.id == current_user.id %}
                 <h4>Edit Transaction</h4>
-                <form method="POST" action="{{ url_for('transaction_detail', transaction_id=transaction_id) }}">
+                <form method="POST" action="{{ url_for('transaction_detail', transaction_id=transaction.id) }}">
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         <label class="form-label">Amount</label>
@@ -71,6 +71,10 @@
                         {{ form.trans_type(class="form-control") }}
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Transaction Category</label>
+                        {{ form.category(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Transaction Frequency</label>
                         {{ form.transaction_frequency(class="form-control") }}
                     </div>
@@ -79,7 +83,7 @@
                         {{ form.duration(class="form-control") }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Duration (months)</label>
+                        <label class="form-label">Description </label>
                         {{ form.description(class="form-control") }}
                     </div>
                     {{ form.submit(class="btn custom-btn ms-2", type="submit") }}

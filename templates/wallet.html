@@ -65,13 +65,11 @@
                                         <td scope="row">
                                             {% if transaction.trans_type == 'Income' %}
                                                 <a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}" class="text-success">
-                                                    <span class="me-1">+</span>
-                                                    ${{ transaction.amount }}.00
+                                                    + ${{ transaction.amount }}
                                                 </a>
                                             {% else %}
                                                 <a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}" class="text-danger">
-                                                    <span class="me-1">-</span>
-                                                    ${{ transaction.amount }}.00
+                                                    - ${{ transaction.amount }}
                                                 </a>
                                             {% endif %}
                                         </td>
@@ -148,6 +146,7 @@
             </div>
 
             <div class="col-lg-7 col-12">
+
                 {% include 'balance_snippet.html' %}
 
                 {% include 'chart_snippet.html' %}
@@ -156,6 +155,21 @@
 
             <div class="col-lg-5 col-12">
 
+                <div class="custom-block bg-white">
+                    <div id="wallet-summary">
+                        <h5>Monthly Summary</h5>
+                            <p>
+                                <strong>{{ date }}-{{ month }}:</strong><br>
+                                Balance: ${{ balance[month-1] }},<br>
+                                Income: ${{ income_data[month-1] }},<br>
+                                Expense: ${{ expense_data[month-1] }}<br>
+                                {% if expense_data[month-1] > income_data[month-1] %}
+                                    <span style="color:red;">(Overspending)</span>
+                                {% endif %}
+                            </p>
+                    </div>
+
+                </div>
                 {% include 'add_m_snippet.html' %}
 
             </div>

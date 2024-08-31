@@ -37,83 +37,115 @@
 
         {% include 'footer.html' %}
 
-        <script type="text/javascript">
-            let pie_option = {
-                series: [{{ balance }}, {{ expense_data|sum }}, {{ income_data|sum }}],
-                chart: {
-                    width: 380,
-                    type: 'pie',
-                },
-                labels: ['Balance', 'Expense', 'Income'],
-                responsive: [{
-                    breakpoint: 480,
-                    options: {
-                        chart: {
-                            width: 200
-                        },
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }]
-            };
 
-            let pie_chart = new ApexCharts(document.querySelector("#pie-chart"), pie_option);
-            pie_chart.render();
-        </script>
-
-        {% if income_data %}
+        {% if income_data and current_user.id==user.id %}
         <script type="text/javascript">
-            let graph_option = {
-                series: [{
-                    name: 'Income',
-                    data: {{ income_data | tojson }}
-                }, {
-                    name: 'Expense',
-                    data: {{ expense_data | tojson }}
-                }],
-                chart: {
-                    type: 'bar',
-                    height: 350
-                },
-                plotOptions: {
-                    bar: {
-                        horizontal: false,
-                        columnWidth: '55%',
-                        endingShape: 'rounded'
+            // Declare variables in the global scope
+            let pie_chart, graph_chart;
+
+            // Function to initialize the charts
+            function initializeCharts() {
+                let pie_option = {
+                    series: [{{ balance }}, {{ expense_data|sum }}, {{ income_data|sum }}],
+                    chart: {
+                        width: 380,
+                        type: 'pie',
                     },
-                },
-                dataLabels: {
-                    enabled: false
-                },
-                stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ['transparent']
-                },
-                xaxis: {
-                    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                },
-                yaxis: {
-                    title: {
-                        text: '$ (thousands)'
-                    }
-                },
-                fill: {
-                    opacity: 1
-                },
-                tooltip: {
-                    y: {
-                        formatter: function (val) {
-                            return "$ " + val + " thousands"
+                    labels: ['Balance', 'Expense', 'Income'],
+                    responsive: [{
+                        breakpoint: 480,
+                        options: {
+                            chart: {
+                                width: 200
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }]
+                };
+
+                pie_chart = new ApexCharts(document.querySelector("#pie-chart"), pie_option);
+                pie_chart.render();
+
+                let graph_option = {
+                    series: [{
+                        name: 'Income',
+                        data: {{ income_data | tojson }}
+                    }, {
+                        name: 'Expense',
+                        data: {{ expense_data | tojson }}
+                    }],
+                    chart: {
+                        type: 'bar',
+                        height: 350
+                    },
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                            columnWidth: '55%',
+                            endingShape: 'rounded'
+                        },
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    stroke: {
+                        show: true,
+                        width: 2,
+                        colors: ['transparent']
+                    },
+                    xaxis: {
+                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    },
+                    yaxis: {
+                        title: {
+                            text: '$ (thousands)'
+                        }
+                    },
+                    fill: {
+                        opacity: 1
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: function (val) {
+                                return "$ " + val + " thousands"
+                            }
                         }
                     }
-                }
-            };
+                };
 
-            let graph_chart = new ApexCharts(document.querySelector("#chart"), graph_option);
-            graph_chart.render();
+                graph_chart = new ApexCharts(document.querySelector("#chart"), graph_option);
+                graph_chart.render();
+            }
+
+            // Function to update the charts with new data
+            function updateCharts() {
+                $.ajax({
+                    url: "/get_latest_data",  // This calls the Flask route created above
+                    type: "GET",
+                    success: function (data) {
+                        // Update the series data in both charts
+                        pie_chart.updateSeries([data.balance, data.expense_sum, data.income_sum]);
+                        graph_chart.updateSeries([
+                            { name: 'Income', data: data.income_data },
+                            { name: 'Expense', data: data.expense_data }
+                        ]);
+                    }
+                });
+            }
+
+            // Initialize charts when the document is ready
+            $(document).ready(function() {
+                initializeCharts();
+                updateCharts();  // Update the charts with the latest data
+            });
+
+            // Optional: You can also call this function periodically, e.g., every 5 minutes
+            setInterval(updateCharts, 90000);  // 300000 ms = 5 minutes
         </script>
+
+
         {% endif %}
 
     </body>

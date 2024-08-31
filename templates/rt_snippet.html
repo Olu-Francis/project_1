@@ -5,7 +5,11 @@
     {% for transaction in user_transactions %}
         <div class="d-flex flex-wrap align-items-center mb-4">
             <div class="d-flex align-items-center">
-                <img src="static/images/profile/senior-man-white-sweater-eyeglasses.jpg" class="profile-image img-fluid" alt="">
+                {% if transaction.trans_type == 'Income' %}
+                    <img src="{{ url_for('static',  filename = '/images/icons/income.png')}}" class="profile-image img-fluid" alt="income img">
+                {% else %}
+                    <img src="{{ url_for('static',  filename = '/images/icons/spending-money.png')}}" class="profile-image img-fluid" alt="expense img">
+                {% endif %}
                 <div>
                     <p>
                         <a href="{{ url_for('transaction_detail', transaction_id=transaction.id) }}">
